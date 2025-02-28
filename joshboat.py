@@ -21,6 +21,7 @@ def run_joshboat():
 
     @client.event
     async def on_message(message):
+        print(type(message))
         if message.content.startswith(prefix + "play"):
             try:
                 if vcs == {}:
@@ -33,7 +34,7 @@ def run_joshboat():
 
                 yt_dl_options = {
                     "format": "bestaudio/best",
-                    'outtmpl': 'downloads/%(id)s.opus',
+                    'outtmpl': 'downloads/%(id)s',
                     'postprocessors': [{
                         'key': 'FFmpegExtractAudio',
                         'preferredcodec': 'opus',  # or 'mp3'
@@ -41,13 +42,9 @@ def run_joshboat():
                     }],
                 }
                 ytdlp = yt_dlp.YoutubeDL(yt_dl_options)
-                # loop = asyncio.get_event_loop()
-                # data = await loop.run_in_executor(None, lambda: ytdlp.extract_info(url, download=False))
-                #
-                # song = data['url']
 
                 info = ytdlp.extract_info(url, download=True)
-                filename = ytdlp.prepare_filename(info)
+                filename = ytdlp.prepare_filename(info) + ".opus"
                 print(filename)
                 ffmpeg_options = {"options": "-vn"}
                 player = discord.FFmpegPCMAudio(filename, **ffmpeg_options)
