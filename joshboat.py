@@ -3,6 +3,7 @@ import os
 import asyncio
 import yt_dlp
 from dotenv import load_dotenv
+import collections
 
 
 def run_joshboat():
@@ -14,14 +15,19 @@ def run_joshboat():
 
     prefix = "hey bitch "
     vcs = {}
+    queue = collections.deque()
+
+    def play_queue(voice_client, ffmpeg_options):
+        while len(queue) != 0:
+            if not voice_client.is_playing():
+                voice_client.play(discord.FFmpegPCMAudio(queue.pop(), **ffmpeg_options))
 
     @client.event
     async def on_ready():
         print(f"{client.user} is now playing music")
 
     @client.event
-    async def on_message(message):
-        print(type(message))
+    async def on_message(message: discord.message.Message):
         if message.content.startswith(prefix + "play"):
             try:
                 if vcs == {}:
@@ -45,12 +51,11 @@ def run_joshboat():
 
                 info = ytdlp.extract_info(url, download=True)
                 filename = ytdlp.prepare_filename(info) + ".opus"
-                print(filename)
+                queue.append(filename)
                 ffmpeg_options = {"options": "-vn"}
-                player = discord.FFmpegPCMAudio(filename, **ffmpeg_options)
+                
+                asyncio.get_event_loop().run_in_executor(None, lambda: play_queue(voice_client, ffmpeg_options))
 
-                if vcs != {}:
-                    vcs[voice_client.guild.id].play(player)
             except Exception as e:
                 print(e)
 
