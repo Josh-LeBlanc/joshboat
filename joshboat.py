@@ -22,7 +22,7 @@ def run_joshboat():
         while len(queue) != 0:
             time.sleep(2)
             if not voice_client.is_playing():
-                voice_client.play(discord.FFmpegPCMAudio(queue.pop(), **ffmpeg_options))
+                voice_client.play(discord.FFmpegOpusAudio(queue.pop(), **ffmpeg_options))
                 time.sleep(3)
 
     @client.event
