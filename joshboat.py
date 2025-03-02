@@ -1,4 +1,5 @@
 import discord
+from discord.ext import commands
 import os
 import asyncio
 import yt_dlp
@@ -11,95 +12,85 @@ def run_joshboat():
     load_dotenv()
     bot_token = os.getenv("BOT_TOKEN")
     intents = discord.Intents.default()
+    prefix = "."
     intents.message_content = True
-    client = discord.Client(intents=intents)
+    client = commands.Bot(command_prefix=prefix, intents=intents)
 
-    prefix = "?"
-    queue = collections.deque()
-    voice_clients = []
-
-    def play_queue(voice_client, ffmpeg_options):
-        while len(queue) != 0:
-            time.sleep(2)
-            if not voice_client.is_playing():
-                voice_client.play(discord.FFmpegOpusAudio(queue.pop(), **ffmpeg_options))
-                time.sleep(3)
+    queues = {}
+    voice_clients = {}
 
     @client.event
     async def on_ready():
         print(f"{client.user} is ready")
 
-    @client.event
-    async def on_message(message: discord.message.Message):
+    @client.command(name="play")
+    async def play(ctx: commands.Context, link):
+        try:
+            if ctx.guild.id in voice_clients.keys():
+                voice_client = voice_clients[ctx.guild.id]
+            else:
+                voice_client = await ctx.author.voice.channel.connect()
+                voice_clients[ctx.guild.id] = voice_client
 
-        if message.content.startswith(prefix + "play"):
-            try:
-                if len(voice_clients) == 0:
-                    voice_client = await message.author.voice.channel.connect()
-                    voice_clients.append(voice_client)
-                else:
-                    voice_client = voice_clients[0]
+            yt_dl_options = {
+                "format": "bestaudio/best",
+                'outtmpl': 'downloads/%(id)s',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'opus',  # or 'mp3'
+                    'preferredquality': '192',
+                }],
+            }
+            ytdlp = yt_dlp.YoutubeDL(yt_dl_options)
 
-                url = message.content.split()[-1]
+            info = ytdlp.extract_info(link, download=True)
+            filename = ytdlp.prepare_filename(info) + ".opus"
+            ffmpeg_options = {"options": "-vn"}
+            
+            voice_client.play(discord.FFmpegOpusAudio(filename, **ffmpeg_options))
 
-                yt_dl_options = {
-                    "format": "bestaudio/best",
-                    'outtmpl': 'downloads/%(id)s',
-                    'postprocessors': [{
-                        'key': 'FFmpegExtractAudio',
-                        'preferredcodec': 'opus',  # or 'mp3'
-                        'preferredquality': '192',
-                    }],
-                }
-                ytdlp = yt_dlp.YoutubeDL(yt_dl_options)
+        except Exception as e:
+            print(e)
 
-                info = ytdlp.extract_info(url, download=True)
-                filename = ytdlp.prepare_filename(info) + ".opus"
-                queue.append(filename)
-                ffmpeg_options = {"options": "-vn"}
-                
-                asyncio.get_event_loop().run_in_executor(None, lambda: play_queue(voice_client, ffmpeg_options))
+    @client.command(name="pause")
+    async def pause(ctx: commands.Context):
+        try:
+            if ctx.guild.id in voice_clients.keys():
+                voice_client = voice_clients[ctx.guild.id]
+            else:
+                voice_client = await ctx.author.voice.channel.connect()
+                voice_clients[ctx.guild.id] = voice_client
+            voice_client.pause()
+        except Exception as e:
+            print(e)
 
-            except Exception as e:
-                print(e)
+    @client.command(name="resume")
+    async def resume(ctx: commands.Context):
+        try:
+            if ctx.guild.id in voice_clients.keys():
+                voice_client = voice_clients[ctx.guild.id]
+            else:
+                voice_client = await ctx.author.voice.channel.connect()
+                voice_clients[ctx.guild.id] = voice_client
 
-        elif message.content.startswith(prefix + "pause"):
-            try:
-                if len(voice_clients) == 0:
-                    voice_client = await message.author.voice.channel.connect()
-                    voice_clients.append(voice_client)
-                else:
-                    voice_client = voice_clients[0]
+            voice_client.resume()
+        except Exception as e:
+            print(e)
 
-                voice_client.pause()
-            except Exception as e:
-                print(e)
+    @client.command(name="stop")
+    async def stop(ctx: commands.Context):
+        try:
+            if ctx.guild.id in voice_clients.keys():
+                voice_client = voice_clients[ctx.guild.id]
+            else:
+                voice_client = await ctx.author.voice.channel.connect()
+                voice_clients[ctx.guild.id] = voice_client
 
-        elif message.content.startswith(prefix + "resume"):
-            try:
-                if len(voice_clients) == 0:
-                    voice_client = await message.author.voice.channel.connect()
-                    voice_clients.append(voice_client)
-                else:
-                    voice_client = voice_clients[0]
-
-                voice_client.resume()
-            except Exception as e:
-                print(e)
-
-        elif message.content.startswith(prefix + "stop"):
-            try:
-                if len(voice_clients) == 0:
-                    voice_client = await message.author.voice.channel.connect()
-                    voice_clients.append(voice_client)
-                else:
-                    voice_client = voice_clients[0]
-
-                voice_client.stop()
-                await voice_client.disconnect()
-                voice_clients.remove(voice_client)
-            except Exception as e:
-                print(e)
+            voice_client.stop()
+            await voice_client.disconnect()
+            voice_clients.pop(ctx.guild.id)
+        except Exception as e:
+            print(e)
 
 
     client.run(bot_token)
