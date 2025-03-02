@@ -20,8 +20,8 @@ python main.py
 6. use the bot with the commands listed below
 ## commands
 ### play
-currently only works with youtube URLs. you can play multiple songs and it will add to a queue
 `.play <url>`
+currently only works with youtube URLs. you can play multiple songs and it will add to a queue
 ### pause
 `.pause`
 pauses the song

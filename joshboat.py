@@ -11,7 +11,7 @@ def run_joshboat():
     load_dotenv()
     bot_token = os.getenv("BOT_TOKEN")
     intents = discord.Intents.default()
-    prefix = "."
+    prefix = "?"
     intents.message_content = True
     client = commands.Bot(command_prefix=prefix, intents=intents)
 
@@ -51,7 +51,6 @@ def run_joshboat():
                 voice_client = await ctx.author.voice.channel.connect()
                 voice_clients[ctx.guild.id] = voice_client
 
-
             yt_dl_options = {
                 "format": "bestaudio/best",
                 'outtmpl': 'downloads/%(id)s',
@@ -64,10 +63,14 @@ def run_joshboat():
             ytdlp = yt_dlp.YoutubeDL(yt_dl_options)
 
             info = ytdlp.extract_info(link, download=True)
+            if info == None:
+                raise Exception("ytdlp extract info failed")
+            title = info['title']
             filename = ytdlp.prepare_filename(info) + ".opus"
             ffmpeg_options = {"options": "-vn"}
             
             voice_client.play(discord.FFmpegOpusAudio(filename, **ffmpeg_options), after=lambda e: asyncio.run_coroutine_threadsafe(play_next(ctx), client.loop))
+            await ctx.send(f"Now playing: {title}")
 
         except Exception as e:
             print(e)
