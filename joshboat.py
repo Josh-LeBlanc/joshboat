@@ -28,7 +28,7 @@ def run_joshboat():
                 raise Exception("please join a voice channel first")
             if ctx.guild.id in queues.keys() and len(queues[ctx.guild.id]) != 0:
                 if not voice_clients[ctx.guild.id].is_playing() or ctx.guild.id not in voice_clients.keys():
-                    await play_song(ctx, queues[ctx.guild.id].pop())
+                    await play_song(ctx, queues[ctx.guild.id].popleft())
                     print(f"\n\nplaying song from queue. new queue length is {len(queues[ctx.guild.id])}\n")
         except Exception as e:
             print(e)

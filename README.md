@@ -35,6 +35,7 @@ skips the current song
 `.stop`
 stops playing and the bot leaves the voice call
 ## todo
+- we are pushing onto the queue FIX THAT BRUH
 - clean up the downloads folder on stop
 - clear queue
 - add songs without needing URL
