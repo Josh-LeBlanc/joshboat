@@ -24,7 +24,7 @@ python main.py
 `.play <url>`
 works automatically if you use youtube URLs.
 
-if you want it to search youtube, you need a Youtube Data v3 api key, and set in the `.env` 
+if you want it to search youtube, you need a Youtube Data v3 api key, and set in the `.env` with `YT_API_KEY=<api_key>`
 ### pause
 `.pause`
 pauses the song
