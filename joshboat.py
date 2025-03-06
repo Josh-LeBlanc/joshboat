@@ -141,6 +141,8 @@ def run_joshboat():
                 voice_client = await ctx.author.voice.channel.connect()
                 voice_clients[ctx.guild.id] = voice_client
 
+            for file in os.listdir("downloads"):
+                os.remove("downloads/" + file)
             voice_client.stop()
             await voice_client.disconnect()
             voice_clients.pop(ctx.guild.id)

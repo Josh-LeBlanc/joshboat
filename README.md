@@ -35,6 +35,7 @@ skips the current song
 `?stop`
 stops playing and the bot leaves the voice call
 ## todo
-- clean up the downloads folder on stop
-- clear queue
-- view queue
+- clear queue command
+- view queue command
+- help command
+- watch video command ?
