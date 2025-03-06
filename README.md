@@ -21,21 +21,18 @@ python main.py
 7. use the bot with the commands listed below
 ## commands
 ### play
-`.play <url>`
-works automatically if you use youtube URLs.
-
-if you want it to search youtube, you need a Youtube Data v3 api key, and set in the `.env` with `YT_API_KEY=<api_key>`
+`?play <url>` OR `?play <search term>`
 ### pause
-`.pause`
+`?pause`
 pauses the song
 ### resume
-`.resume`
+`?resume`
 resumes the song
 ### skip
-`.skip`
+`?skip`
 skips the current song
 ### stop
-`.stop`
+`?stop`
 stops playing and the bot leaves the voice call
 ## todo
 - clean up the downloads folder on stop

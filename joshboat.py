@@ -7,27 +7,6 @@ from dotenv import load_dotenv
 import collections
 import requests
 
-def search_youtube_video(search_term, api_key):
-    # Send request to YouTube API
-    url = "https://www.googleapis.com/youtube/v3/search"
-    params = {
-        "part": "snippet",
-        "order": "relevance",
-        "q": search_term,
-        "type": "video",
-        "maxResults": 1,  # Get the top result
-        "key": api_key
-    }
-    
-    response = requests.get(url, params=params)
-    data = response.json()
-    
-    # Extract the video ID from the top result
-    if "items" in data and len(data["items"]) > 0:
-        video_id = data["items"][0]["id"]["videoId"]
-        return f"https://www.youtube.com/watch?v={video_id}"
-    else:
-        return None  # No results found
 
 def run_joshboat():
     load_dotenv()
@@ -36,7 +15,6 @@ def run_joshboat():
     prefix = "?"
     intents.message_content = True
     client = commands.Bot(command_prefix=prefix, intents=intents)
-    yt_api_key = os.getenv("YT_API_KEY")
 
     queues = {}
     voice_clients = {}
@@ -85,11 +63,18 @@ def run_joshboat():
             }
             ytdlp = yt_dlp.YoutubeDL(yt_dl_options)
 
-            info = ytdlp.extract_info(link, download=True)
-            if info == None:
-                raise Exception("ytdlp extract info failed")
-            title = info['title']
-            filename = ytdlp.prepare_filename(info) + ".opus"
+            if "https://" not in link:
+                info = ytdlp.extract_info(f"ytsearch:{link}", download=True)
+                entry = info['entries'][0]
+                title = entry['title']
+                filename = "downloads/" + entry['id'] + ".opus"
+            else:
+                info = ytdlp.extract_info(link, download=True)
+                if info == None:
+                    raise Exception("ytdlp extract info failed")
+                title = info['title']
+                filename = "downloads/" + info['id'] + ".opus"
+
             ffmpeg_options = {"options": "-vn"}
             
             voice_client.play(discord.FFmpegOpusAudio(filename, **ffmpeg_options), after=lambda e: asyncio.run_coroutine_threadsafe(play_next(ctx), client.loop))
@@ -182,12 +167,6 @@ def run_joshboat():
                 raise Exception("please join a voice channel first")
             if ctx.guild.id not in queues.keys():
                 queues[ctx.guild.id] = collections.deque()
-
-            if "https:" not in link:
-                search_result = search_youtube_video(link, yt_api_key)
-                if search_result == None:
-                    raise Exception("could not search for youtube video")
-                link = search_result
 
             queues[ctx.guild.id].append(link)
 
