@@ -36,19 +36,7 @@ def run_joshboat():
 
     async def play_song(ctx: commands.Context, song: dict):
         try:
-            if ctx.guild == None:
-                raise Exception("please join a voice channel first")
-            if ctx.guild.id in voice_clients.keys():
-                voice_client = voice_clients[ctx.guild.id]
-            else:
-                if isinstance(ctx.author, discord.User):
-                    raise Exception("please join a voice channel first")
-                if ctx.author.voice == None:
-                    raise Exception("please join a voice channel first")
-                if ctx.author.voice.channel == None:
-                    raise Exception("please join a voice channel first")
-                voice_client = await ctx.author.voice.channel.connect()
-                voice_clients[ctx.guild.id] = voice_client
+            voice_client = await get_voice_client(ctx)
 
             ffmpeg_options = {"options": "-vn"}
             voice_client.play(discord.FFmpegOpusAudio(song["filename"], **ffmpeg_options), after=lambda e: asyncio.run_coroutine_threadsafe(play_next(ctx), client.loop))
@@ -60,19 +48,7 @@ def run_joshboat():
     @client.command(name="pause")
     async def pause(ctx: commands.Context):
         try:
-            if ctx.guild == None:
-                raise Exception("please join a voice channel first")
-            if ctx.guild.id in voice_clients.keys():
-                voice_client = voice_clients[ctx.guild.id]
-            else:
-                if isinstance(ctx.author, discord.User):
-                    raise Exception("please join a voice channel first")
-                if ctx.author.voice == None:
-                    raise Exception("please join a voice channel first")
-                if ctx.author.voice.channel == None:
-                    raise Exception("please join a voice channel first")
-                voice_client = await ctx.author.voice.channel.connect()
-                voice_clients[ctx.guild.id] = voice_client
+            voice_client = await get_voice_client(ctx)
             voice_client.pause()
         except Exception as e:
             print(e)
@@ -80,19 +56,7 @@ def run_joshboat():
     @client.command(name="resume")
     async def resume(ctx: commands.Context):
         try:
-            if ctx.guild == None:
-                raise Exception("please join a voice channel first")
-            if ctx.guild.id in voice_clients.keys():
-                voice_client = voice_clients[ctx.guild.id]
-            else:
-                if isinstance(ctx.author, discord.User):
-                    raise Exception("please join a voice channel first")
-                if ctx.author.voice == None:
-                    raise Exception("please join a voice channel first")
-                if ctx.author.voice.channel == None:
-                    raise Exception("please join a voice channel first")
-                voice_client = await ctx.author.voice.channel.connect()
-                voice_clients[ctx.guild.id] = voice_client
+            voice_client = await get_voice_client(ctx)
 
             voice_client.resume()
         except Exception as e:
@@ -101,24 +65,14 @@ def run_joshboat():
     @client.command(name="stop")
     async def stop(ctx: commands.Context):
         try:
-            if ctx.guild == None:
-                raise Exception("please join a voice channel first")
-            if ctx.guild.id in voice_clients.keys():
-                voice_client = voice_clients[ctx.guild.id]
-            else:
-                if isinstance(ctx.author, discord.User):
-                    raise Exception("please join a voice channel first")
-                if ctx.author.voice == None:
-                    raise Exception("please join a voice channel first")
-                if ctx.author.voice.channel == None:
-                    raise Exception("please join a voice channel first")
-                voice_client = await ctx.author.voice.channel.connect()
-                voice_clients[ctx.guild.id] = voice_client
+            voice_client = await get_voice_client(ctx)
 
             for file in os.listdir("downloads"):
                 os.remove("downloads/" + file)
             voice_client.stop()
             await voice_client.disconnect()
+            if not ctx.guild:
+                raise Exception("guild not found")
             voice_clients.pop(ctx.guild.id)
         except Exception as e:
             print(e)
@@ -126,21 +80,7 @@ def run_joshboat():
     @client.command(name="play")
     async def play(ctx, *, link):
         try:
-            if ctx.guild == None:
-                raise Exception("please join a voice channel first")
-            if ctx.guild.id in voice_clients.keys():
-                voice_client = voice_clients[ctx.guild.id]
-            else:
-                if isinstance(ctx.author, discord.User):
-                    raise Exception("please join a voice channel first")
-                if ctx.author.voice == None:
-                    raise Exception("please join a voice channel first")
-                if ctx.author.voice.channel == None:
-                    raise Exception("please join a voice channel first")
-                voice_client = await ctx.author.voice.channel.connect()
-                voice_clients[ctx.guild.id] = voice_client
-            if ctx.guild == None:
-                raise Exception("please join a voice channel first")
+            _ = await get_voice_client(ctx)
             if ctx.guild.id not in queues.keys():
                 queues[ctx.guild.id] = collections.deque()
 
@@ -184,25 +124,31 @@ def run_joshboat():
     @client.command(name="skip")
     async def skip(ctx):
         try:
-            if ctx.guild == None:
-                raise Exception("please join a voice channel first")
-            if ctx.guild.id in voice_clients.keys():
-                voice_client = voice_clients[ctx.guild.id]
-            else:
-                if isinstance(ctx.author, discord.User):
-                    raise Exception("please join a voice channel first")
-                if ctx.author.voice == None:
-                    raise Exception("please join a voice channel first")
-                if ctx.author.voice.channel == None:
-                    raise Exception("please join a voice channel first")
-                voice_client = await ctx.author.voice.channel.connect()
-                voice_clients[ctx.guild.id] = voice_client
+            voice_client = await get_voice_client(ctx)
 
             voice_client.stop()
             await play_next(ctx)
         except Exception as e:
             print(e)
 
+    async def get_voice_client(ctx: commands.Context):
+        if ctx.guild == None:
+            raise Exception("please join a voice channel first")
+        if ctx.guild.id in voice_clients.keys():
+            voice_client = voice_clients[ctx.guild.id]
+            print(len(voice_clients.items()))
+            return voice_client
+        else:
+            if isinstance(ctx.author, discord.User):
+                raise Exception("please join a voice channel first")
+            if ctx.author.voice == None:
+                raise Exception("please join a voice channel first")
+            if ctx.author.voice.channel == None:
+                raise Exception("please join a voice channel first")
+            voice_client = await ctx.author.voice.channel.connect()
+            voice_clients[ctx.guild.id] = voice_client
+            print(len(voice_clients.items()))
+            return voice_client
 
     client.run(bot_token)
 
