@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 import collections
 import requests
 
-
 def run_joshboat():
     load_dotenv()
     bot_token = os.getenv("BOT_TOKEN")
@@ -35,8 +34,7 @@ def run_joshboat():
             print(e)
 
 
-    # @client.command(name="play")
-    async def play_song(ctx: commands.Context, link):
+    async def play_song(ctx: commands.Context, song: dict):
         try:
             if ctx.guild == None:
                 raise Exception("please join a voice channel first")
@@ -52,33 +50,9 @@ def run_joshboat():
                 voice_client = await ctx.author.voice.channel.connect()
                 voice_clients[ctx.guild.id] = voice_client
 
-            yt_dl_options = {
-                "format": "bestaudio/best",
-                'outtmpl': 'downloads/%(id)s',
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'opus',  # or 'mp3'
-                    'preferredquality': '192',
-                }],
-            }
-            ytdlp = yt_dlp.YoutubeDL(yt_dl_options)
-
-            if "https://" not in link:
-                info = ytdlp.extract_info(f"ytsearch:{link}", download=True)
-                entry = info['entries'][0]
-                title = entry['title']
-                filename = "downloads/" + entry['id'] + ".opus"
-            else:
-                info = ytdlp.extract_info(link, download=True)
-                if info == None:
-                    raise Exception("ytdlp extract info failed")
-                title = info['title']
-                filename = "downloads/" + info['id'] + ".opus"
-
             ffmpeg_options = {"options": "-vn"}
-            
-            voice_client.play(discord.FFmpegOpusAudio(filename, **ffmpeg_options), after=lambda e: asyncio.run_coroutine_threadsafe(play_next(ctx), client.loop))
-            await ctx.send(f"Now playing: {title}")
+            voice_client.play(discord.FFmpegOpusAudio(song["filename"], **ffmpeg_options), after=lambda e: asyncio.run_coroutine_threadsafe(play_next(ctx), client.loop))
+            await ctx.send(f"Now playing: {song["title"]}")
 
         except Exception as e:
             print(e)
@@ -170,10 +144,38 @@ def run_joshboat():
             if ctx.guild.id not in queues.keys():
                 queues[ctx.guild.id] = collections.deque()
 
-            queues[ctx.guild.id].append(link)
+            yt_dl_options = {
+                "format": "bestaudio/best",
+                'outtmpl': 'downloads/%(id)s',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'opus',  # or 'mp3'
+                    'preferredquality': '192',
+                }],
+            }
+            ytdlp = yt_dlp.YoutubeDL(yt_dl_options)
 
-            await ctx.send("added to queue")
-            print(f"\n\nadded {link} to queue\nnew queue length: {len(queues[ctx.guild.id])}\n")
+            if "https://" not in link:
+                info = ytdlp.extract_info(f"ytsearch:{link}", download=True)
+                if not info:
+                    raise Exception("search failed")
+                entry = info['entries'][0]
+                title = entry['title']
+                filename = "downloads/" + entry['id'] + ".opus"
+            else:
+                info = ytdlp.extract_info(link, download=True)
+                if info == None:
+                    raise Exception("ytdlp extract info failed")
+                title = info['title']
+                filename = "downloads/" + info['id'] + ".opus"
+
+            song = {}
+            song["filename"] = filename
+            song["title"] = title
+
+            queues[ctx.guild.id].append(song)
+
+            await ctx.send(f"added {title} to queue")
 
             await play_next(ctx)
         except Exception as e:
