@@ -2,7 +2,7 @@
 discord music bot
 ## run it yourself
 1. ensure you have `ffmpeg` installed and in your path. (python too but i think that's obvious)
-2. create the app in the discord developer portal. grant it __bot__ permissions and check all the permissions in the __text permissions__ and __voice permissions__ columns
+2. create an app in the discord developer portal. grant it __bot__ permissions and check all the permissions in the __text permissions__ and __voice permissions__ columns
 3. invite the bot to your server
 4. make a `.env` file and set the token value: `BOT_TOKEN=<token>`
 5. run these to set the enviromnent up:
